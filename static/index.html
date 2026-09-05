@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD API - Управление данными</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 12px 30px;
+            border: none;
+            background: #f0f0f0;
+            color: #555;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .tab-btn:hover {
+            background: #e0e0e0;
+            transform: translateY(-2px);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section h2 .badge {
+            background: #667eea;
+            color: white;
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-size: 0.7em;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 5px 12px;
+            font-size: 12px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .data-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .data-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .data-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .data-table .actions {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .empty-state .icon {
+            font-size: 50px;
+            margin-bottom: 10px;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+
+        .refresh-btn {
+            float: right;
+            background: #6c757d;
+            color: white;
+            padding: 8px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .refresh-btn:hover {
+            background: #5a6268;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .stat-card .number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-card .label {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            animation: modalIn 0.3s;
+        }
+
+        @keyframes modalIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-content h3 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .data-table {
+                font-size: 12px;
+            }
+            
+            .data-table th,
+            .data-table td {
+                padding: 8px;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .tab-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 CRUD API Управление</h1>
+        <p class="subtitle">Управление пользователями, товарами и заказами</p>
+
+        <div id="alert" class="alert"></div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('users')">👤 Пользователи</button>
+            <button class="tab-btn" onclick="switchTab('products')">📦 Товары</button>
+            <button class="tab-btn" onclick="switchTab('orders')">📋 Заказы</button>
+        </div>
+
+        <!-- Пользователи -->
+        <div id="tab-users" class="tab-content active">
+            <div class="section">
+                <h2>👤 Создать пользователя</h2>
+                <form id="userForm" onsubmit="createUser(event)">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Имя пользователя</label>
+                            <input type="text" id="userUsername" placeholder="username" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="userEmail" placeholder="email@example.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Полное имя</label>
+                            <input type="text" id="userFullName" placeholder="Иван Иванов" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Возраст</label>
+                            <input type="number" id="userAge" placeholder="25" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">➕ Создать пользователя</button>
+                </form>
+            </div>
+
+            <div class="section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2>📋 Список пользователей</h2>
+                    <button class="refresh-btn" onclick="loadUsers()">🔄 Обновить</button>
+                </div>
+                <div id="usersTableContainer">
+                    <div class="loading">Загрузка...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Товары -->
+        <div id="tab-products" class="tab-content">
+            <div class="section">
+                <h2>📦 Создать товар</h2>
+                <form id="productForm" onsubmit="createProduct(event)">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Название</label>
+                            <input type="text" id="productName" placeholder="Ноутбук" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Описание</label>
+                            <input type="text" id="productDescription" placeholder="Описание товара" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Цена (₽)</label>
+                            <input type="number" id="productPrice" placeholder="999.99" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Количество</label>
+                            <input type="number" id="productStock" placeholder="10" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Категория</label>
+                            <input type="text" id="productCategory" placeholder="Электроника" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">➕ Создать товар</button>
+                </form>
+            </div>
+
+            <div class="section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2>📋 Список товаров</h2>
+                    <button class="refresh-btn" onclick="loadProducts()">🔄 Обновить</button>
+                </div>
+                <div id="productsTableContainer">
+                    <div class="loading">Загрузка...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Заказы -->
+        <div id="tab-orders" class="tab-content">
+            <div class="section">
+                <h2>📋 Создать заказ</h2>
+                <form id="orderForm" onsubmit="createOrder(event)">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>ID пользователя</label>
+                            <input type="number" id="orderUserId" placeholder="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label>ID товара</label>
+                            <input type="number" id="orderProductId" placeholder="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Количество</label>
+                            <input type="number" id="orderQuantity" placeholder="2" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">➕ Создать заказ</button>
+                </form>
+            </div>
+
+            <div class="section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2>📋 Список заказов</h2>
+                    <button class="refresh-btn" onclick="loadOrders()">🔄 Обновить</button>
+                </div>
+                <div id="ordersTableContainer">
+                    <div class="loading">Загрузка...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для редактирования -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <h3>✏️ Редактирование</h3>
+            <div id="editFormContainer"></div>
+            <div class="modal-actions">
+                <button class="btn btn-danger" onclick="closeModal()">Отмена</button>
+                <button class="btn btn-primary" onclick="saveEdit()">💾 Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        let currentEditType = null;
+        let currentEditId = null;
+
+        // Переключение вкладок
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
+            
+            // Загрузка данных при переключении
+            if (tab === 'users') loadUsers();
+            else if (tab === 'products') loadProducts();
+            else if (tab === 'orders') loadOrders();
+        }
+
+        // Показ уведомлений
+        function showAlert(message, type = 'success') {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.className = `alert alert-${type} show`;
+            setTimeout(() => {
+                alert.classList.remove('show');
+            }, 5000);
+        }
+
+        // API запросы
+        async function apiRequest(url, method = 'GET', data = null) {
+            const options = {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            };
+            if (data) {
+                options.body = JSON.stringify(data);
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}${url}`, options);
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Ошибка запроса');
+                }
+                return await response.json();
+            } catch (error) {
+                showAlert(`❌ ${error.message}`, 'danger');
+                throw error;
+            }
+        }
+
+        // ========== ПОЛЬЗОВАТЕЛИ ==========
+        async function createUser(event) {
+            event.preventDefault();
+            const data = {
+                username: document.getElementById('userUsername').value,
+                email: document.getElementById('userEmail').value,
+                full_name: document.getElementById('userFullName').value,
+                age: parseInt(document.getElementById('userAge').value)
+            };
+            
+            try {
+                await apiRequest('/users/', 'POST', data);
+                showAlert('✅ Пользователь создан успешно!');
+                document.getElementById('userForm').reset();
+                loadUsers();
+            } catch (error) {
+                // Ошибка уже показана в apiRequest
+            }
+        }
+
+        async function loadUsers() {
+            const container = document.getElementById('usersTableContainer');
+            try {
+                const users = await apiRequest('/users/');
+                if (!users || users.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="icon">👤</div>
+                            <p>Пользователей пока нет</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let html = `<table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Имя</th>
+                            <th>Email</th>
+                            <th>Полное имя</th>
+                            <th>Возраст</th>
+                            <th>Статус</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+                
+                users.forEach(user => {
+                    html += `
+                        <tr>
+                            <td>${user.id}</td>
+                            <td><strong>${user.username}</strong></td>
+                            <td>${user.email}</td>
+                            <td>${user.full_name}</td>
+                            <td>${user.age}</td>
+                            <td>${user.is_active ? '✅ Активен' : '❌ Неактивен'}</td>
+                            <td>
+                                <div class="actions">
+                                    <button class="btn btn-warning btn-sm" onclick="editUser(${user.id})">✏️</button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteUser(${user.id})">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += `</tbody></table>`;
+                container.innerHTML = html;
+            } catch (error) {
+                container.innerHTML = `<div class="empty-state"><p>❌ Ошибка загрузки данных</p></div>`;
+            }
+        }
+
+        async function deleteUser(id) {
+            if (!confirm('Удалить пользователя?')) return;
+            try {
+                await apiRequest(`/users/${id}`, 'DELETE');
+                showAlert('✅ Пользователь удален');
+                loadUsers();
+            } catch (error) {}
+        }
+
+        function editUser(id) {
+            currentEditType = 'user';
+            currentEditId = id;
+            const modal = document.getElementById('editModal');
+            modal.classList.add('show');
+            
+            document.getElementById('editFormContainer').innerHTML = `
+                <div class="form-group">
+                    <label>Полное имя</label>
+                    <input type="text" id="editFullName" placeholder="Полное имя">
+                </div>
+                <div class="form-group">
+                    <label>Возраст</label>
+                    <input type="number" id="editAge" placeholder="Возраст">
+                </div>
+                <div class="form-group">
+                    <label>Активен</label>
+                    <select id="editIsActive">
+                        <option value="true">Да</option>
+                        <option value="false">Нет</option>
+                    </select>
+                </div>
+            `;
+        }
+
+        // ========== ТОВАРЫ ==========
+        async function createProduct(event) {
+            event.preventDefault();
+            const data = {
+                name: document.getElementById('productName').value,
+                description: document.getElementById('productDescription').value,
+                price: parseFloat(document.getElementById('productPrice').value),
+                stock: parseInt(document.getElementById('productStock').value),
+                category: document.getElementById('productCategory').value
+            };
+            
+            try {
+                await apiRequest('/products/', 'POST', data);
+                showAlert('✅ Товар создан успешно!');
+                document.getElementById('productForm').reset();
+                loadProducts();
+            } catch (error) {}
+        }
+
+        async function loadProducts() {
+            const container = document.getElementById('productsTableContainer');
+            try {
+                const products = await apiRequest('/products/');
+                if (!products || products.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="icon">📦</div>
+                            <p>Товаров пока нет</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let html = `<table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Название</th>
+                            <th>Описание</th>
+                            <th>Цена</th>
+                            <th>В наличии</th>
+                            <th>Категория</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+                
+                products.forEach(product => {
+                    html += `
+                        <tr>
+                            <td>${product.id}</td>
+                            <td><strong>${product.name}</strong></td>
+                            <td>${product.description}</td>
+                            <td>${product.price} ₽</td>
+                            <td>${product.stock}</td>
+                            <td>${product.category}</td>
+                            <td>
+                                <div class="actions">
+                                    <button class="btn btn-warning btn-sm" onclick="editProduct(${product.id})">✏️</button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteProduct(${product.id})">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += `</tbody></table>`;
+                container.innerHTML = html;
+            } catch (error) {
+                container.innerHTML = `<div class="empty-state"><p>❌ Ошибка загрузки данных</p></div>`;
+            }
+        }
+
+        async function deleteProduct(id) {
+            if (!confirm('Удалить товар?')) return;
+            try {
+                await apiRequest(`/products/${id}`, 'DELETE');
+                showAlert('✅ Товар удален');
+                loadProducts();
+            } catch (error) {}
+        }
+
+        function editProduct(id) {
+            currentEditType = 'product';
+            currentEditId = id;
+            const modal = document.getElementById('editModal');
+            modal.classList.add('show');
+            
+            document.getElementById('editFormContainer').innerHTML = `
+                <div class="form-group">
+                    <label>Цена</label>
+                    <input type="number" id="editPrice" placeholder="999.99" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Количество</label>
+                    <input type="number" id="editStock" placeholder="10">
+                </div>
+                <div class="form-group">
+                    <label>Доступен</label>
+                    <select id="editIsAvailable">
+                        <option value="true">Да</option>
+                        <option value="false">Нет</option>
+                    </select>
+                </div>
+            `;
+        }
+
+        // ========== ЗАКАЗЫ ==========
+        async function createOrder(event) {
+            event.preventDefault();
+            const data = {
+                user_id: parseInt(document.getElementById('orderUserId').value),
+                product_id: parseInt(document.getElementById('orderProductId').value),
+                quantity: parseInt(document.getElementById('orderQuantity').value)
+            };
+            
+            try {
+                await apiRequest('/orders/', 'POST', data);
+                showAlert('✅ Заказ создан успешно!');
+                document.getElementById('orderForm').reset();
+                loadOrders();
+            } catch (error) {}
+        }
+
+        async function loadOrders() {
+            const container = document.getElementById('ordersTableContainer');
+            try {
+                const orders = await apiRequest('/orders/');
+                if (!orders || orders.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="icon">📋</div>
+                            <p>Заказов пока нет</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let html = `<table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Пользователь</th>
+                            <th>Товар</th>
+                            <th>Кол-во</th>
+                            <th>Сумма</th>
+                            <th>Статус</th>
+                            <th>Дата</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+                
+                orders.forEach(order => {
+                    const date = new Date(order.created_at).toLocaleString();
+                    html += `
+                        <tr>
+                            <td>${order.id}</td>
+                            <td>${order.user_id}</td>
+                            <td>${order.product_id}</td>
+                            <td>${order.quantity}</td>
+                            <td>${order.total_price} ₽</td>
+                            <td><span style="background: ${order.status === 'completed' ? '#28a745' : '#ffc107'}; 
+                                         color: ${order.status === 'completed' ? 'white' : '#333'}; 
+                                         padding: 3px 10px; border-radius: 20px; font-size: 12px;">
+                                ${order.status}
+                            </span></td>
+                            <td>${date}</td>
+                            <td>
+                                <div class="actions">
+                                    <button class="btn btn-warning btn-sm" onclick="editOrder(${order.id})">✏️</button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteOrder(${order.id})">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += `</tbody></table>`;
+                container.innerHTML = html;
+            } catch (error) {
+                container.innerHTML = `<div class="empty-state"><p>❌ Ошибка загрузки данных</p></div>`;
+            }
+        }
+
+        async function deleteOrder(id) {
+            if (!confirm('Удалить заказ?')) return;
+            try {
+                await apiRequest(`/orders/${id}`, 'DELETE');
+                showAlert('✅ Заказ удален');
+                loadOrders();
+            } catch (error) {}
+        }
+
+        function editOrder(id) {
+            currentEditType = 'order';
+            currentEditId = id;
+            const modal = document.getElementById('editModal');
+            modal.classList.add('show');
+            
+            document.getElementById('editFormContainer').innerHTML = `
+                <div class="form-group">
+                    <label>Статус</label>
+                    <select id="editStatus">
+                        <option value="pending">В обработке</option>
+                        <option value="completed">Выполнен</option>
+                        <option value="cancelled">Отменен</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Количество</label>
+                    <input type="number" id="editQuantity" placeholder="Количество">
+                </div>
+            `;
+        }
+
+        // Сохранение редактирования
+        async function saveEdit() {
+            let data = {};
+            let url = '';
+            
+            if (currentEditType === 'user') {
+                data = {
+                    full_name: document.getElementById('editFullName').value,
+                    age: parseInt(document.getElementById('editAge').value),
+                    is_active: document.getElementById('editIsActive').value === 'true'
+                };
+                url = `/users/${currentEditId}`;
+                await apiRequest(url, 'PUT', data);
+                showAlert('✅ Пользователь обновлен');
+                loadUsers();
+            } else if (currentEditType === 'product') {
+                data = {
+                    price: parseFloat(document.getElementById('editPrice').value),
+                    stock: parseInt(document.getElementById('editStock').value),
+                    is_available: document.getElementById('editIsAvailable').value === 'true'
+                };
+                url = `/products/${currentEditId}`;
+                await apiRequest(url, 'PUT', data);
+                showAlert('✅ Товар обновлен');
+                loadProducts();
+            } else if (currentEditType === 'order') {
+                data = {
+                    status: document.getElementById('editStatus').value,
+                    quantity: parseInt(document.getElementById('editQuantity').value)
+                };
+                url = `/orders/${currentEditId}`;
+                await apiRequest(url, 'PATCH', data);
+                showAlert('✅ Заказ обновлен');
+                loadOrders();
+            }
+            
+            closeModal();
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').classList.remove('show');
+        }
+
+        // Закрытие модального окна при клике вне
+        document.getElementById('editModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        // Загрузка данных при открытии страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUsers();
+        });
+    </script>
+</body>
+</html>
