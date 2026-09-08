@@ -1,6 +1,12 @@
 pipeline {
     agent any
     
+    environment {
+        // Устанавливаем кодировку для правильной работы с русскими символами
+        PYTHONIOENCODING = 'UTF-8'
+        LANG = 'ru_RU.UTF-8'
+    }
+    
     stages {
         stage('Checkout') {
             steps {
@@ -12,15 +18,16 @@ pipeline {
         stage('Setup') {
             steps {
                 bat '''
+                    chcp 65001
                     echo Создание виртуального окружения...
                     if not exist venv (
-                        python -m venv venv
+                        python -m venv venv --copies
                     )
                     call venv\\Scripts\\activate.bat
                     echo Установка зависимостей...
-                    pip install --upgrade pip
-                    pip install -r requirements.txt
-                    pip install pytest
+                    python -m pip install --upgrade pip
+                    python -m pip install -r requirements.txt
+                    python -m pip install pytest
                 '''
                 echo "Окружение настроено"
             }
@@ -29,9 +36,10 @@ pipeline {
         stage('Run Tests') {
             steps {
                 bat '''
+                    chcp 65001
                     call venv\\Scripts\\activate.bat
                     echo Запуск тестов...
-                    pytest tests/ -v
+                    python -m pytest tests/ -v
                 '''
                 echo "Тесты пройдены"
             }
@@ -41,9 +49,10 @@ pipeline {
             steps {
                 echo "Деплой на продакшн..."
                 bat '''
+                    chcp 65001
                     call venv\\Scripts\\activate.bat
                     echo Запуск сервера...
-                    start /B uvicorn app.main:app --host 0.0.0.0 --port 8080
+                    start /B python -m uvicorn app.main:app --host 0.0.0.0 --port 8080
                 '''
                 echo "Сервер запущен на http://localhost:8080"
             }
