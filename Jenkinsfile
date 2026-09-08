@@ -2,9 +2,8 @@ pipeline {
     agent any
     
     environment {
-        // Устанавливаем кодировку для правильной работы с русскими символами
-        PYTHONIOENCODING = 'UTF-8'
-        LANG = 'ru_RU.UTF-8'
+        // Ваш путь к Python
+        PYTHON_PATH = 'C:\\Users\\Егор\\AppData\\Local\\Microsoft\\WindowsApps\\python.exe'
     }
     
     stages {
@@ -23,11 +22,10 @@ pipeline {
                     if not exist venv (
                         python -m venv venv --copies
                     )
-                    call venv\\Scripts\\activate.bat
                     echo Установка зависимостей...
-                    python -m pip install --upgrade pip
-                    python -m pip install -r requirements.txt
-                    python -m pip install pytest
+                    venv\\Scripts\\python.exe -m pip install --upgrade pip
+                    venv\\Scripts\\python.exe -m pip install -r requirements.txt
+                    venv\\Scripts\\python.exe -m pip install pytest uvicorn
                 '''
                 echo "Окружение настроено"
             }
@@ -37,9 +35,8 @@ pipeline {
             steps {
                 bat '''
                     chcp 65001
-                    call venv\\Scripts\\activate.bat
                     echo Запуск тестов...
-                    python -m pytest tests/ -v
+                    venv\\Scripts\\python.exe -m pytest tests/ -v
                 '''
                 echo "Тесты пройдены"
             }
@@ -50,9 +47,8 @@ pipeline {
                 echo "Деплой на продакшн..."
                 bat '''
                     chcp 65001
-                    call venv\\Scripts\\activate.bat
                     echo Запуск сервера...
-                    start /B python -m uvicorn app.main:app --host 0.0.0.0 --port 8080
+                    start /B venv\\Scripts\\python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8080
                 '''
                 echo "Сервер запущен на http://localhost:8080"
             }
@@ -61,10 +57,10 @@ pipeline {
     
     post {
         success {
-            echo "Pipeline выполнен успешно!"
+            echo "✅ Pipeline выполнен успешно!"
         }
         failure {
-            echo "Pipeline завершился с ошибкой!"
+            echo "❌ Pipeline завершился с ошибкой!"
         }
     }
 }
