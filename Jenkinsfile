@@ -5,7 +5,7 @@ pipeline {
         stage('Получение кода') {
             steps {
                 checkout scm
-                echo "Код получен. Ветка: ${env.BRANCH_NAME}"
+                echo "Код получен. Ветка: ${env.GIT_BRANCH}"
             }
         }
         
