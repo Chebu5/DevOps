@@ -27,17 +27,17 @@ pipeline {
                 not { branch 'main' }
             }
             steps {
-                echo "Деплой только для main. Текущая ветка: ${env.BRANCH_NAME}"
+                echo "Деплой только для main. Текущая ветка: ${env.GIT_BRANCH}"
             }
         }
     }
     
     post {
         success {
-            echo "Готово! Ветка: ${env.BRANCH_NAME}"
+            echo "Готово! Ветка: ${env.GIT_BRANCH}"
         }
         failure {
-            echo "Ошибка! Ветка: ${env.BRANCH_NAME}"
+            echo "Ошибка! Ветка: ${env.GIT_BRANCH}"
         }
     }
 }
