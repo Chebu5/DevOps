@@ -16,7 +16,7 @@ pipeline {
             steps {
                 bat '''
                     echo "Запуск сервера..."
-                    start /B python -m uvicorn app.main:app --host 0.0.0.0 --port 8080
+                    start /B python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
                     echo "✅ Сервер запущен на http://localhost:8080"
                 '''
             }
