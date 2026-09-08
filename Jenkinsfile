@@ -11,7 +11,7 @@ pipeline {
         
         stage('Деплой') {
             when {
-                branch 'main'
+                expression { env.GIT_BRANCH == 'main' }
             }
             steps {
                 bat '''
