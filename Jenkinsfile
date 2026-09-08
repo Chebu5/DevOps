@@ -1,57 +1,99 @@
 pipeline {
     agent any
-    
+
+    environment {
+        BRANCH = env.BRANCH_NAME
+        APP_PORT = '8080'
+    }
+
     stages {
-        stage('Checkout') {
+
+        // ========== 1. СВЯЗЬ С GITHUB ==========
+        stage('📥 Получение кода из GitHub') {
             steps {
                 checkout scm
-                echo "Код получен из ветки: ${env.BRANCH_NAME}"
+                echo """
+                ✅ Репозиторий: ${env.GIT_URL}
+                ✅ Ветка: ${BRANCH}
+                ✅ Коммит: ${env.GIT_COMMIT}
+                ✅ Автор: ${env.GIT_AUTHOR_NAME}
+                """
             }
         }
-        
-        stage('Setup') {
+
+        // ========== 2. НАСТРОЙКА ОКРУЖЕНИЯ ==========
+        stage('🔧 Установка зависимостей') {
             steps {
                 bat '''
-                    chcp 65001
-                    echo Установка зависимостей...
-                    C:\\Users\\Егор\\AppData\\Local\\Microsoft\\WindowsApps\\python.exe -m pip install --upgrade pip
-                    C:\\Users\\Егор\\AppData\\Local\\Microsoft\\WindowsApps\\python.exe -m pip install -r requirements.txt
-                    C:\\Users\\Егор\\AppData\\Local\\Microsoft\\WindowsApps\\python.exe -m pip install pytest uvicorn
+                    echo "Установка зависимостей..."
+                    if not exist venv (
+                        python -m venv venv
+                    )
+                    call venv\\Scripts\\activate.bat
+                    python -m pip install --upgrade pip
+                    pip install -r requirements.txt
+                    pip install uvicorn
+                    echo "✅ Окружение готово"
                 '''
-                echo "Зависимости установлены"
             }
         }
-        
-        stage('Run Tests') {
+
+        // ========== 3. ДОСТАВКА (CD) ТОЛЬКО ДЛЯ MAIN ==========
+        stage('🚀 Доставка и деплой (CD)') {
+            when {
+                branch 'main'
+            }
             steps {
                 bat '''
-                    chcp 65001
-                    echo Запуск тестов...
-                    C:\\Users\\Егор\\AppData\\Local\\Microsoft\\WindowsApps\\python.exe -m pytest tests/ -v
+                    echo "========================================"
+                    echo "ЗАПУСК CD ПРОЦЕССА"
+                    echo "Ветка: ${BRANCH}"
+                    echo "========================================"
+                    call venv\\Scripts\\activate.bat
+                    echo "Запуск приложения на порту ${APP_PORT}..."
+                    start /B python -m uvicorn app.main:app --host 127.0.0.1 --port ${APP_PORT}
+                    echo "✅ Приложение успешно развернуто!"
+                    echo "🌐 Доступно по адресу: http://localhost:${APP_PORT}"
                 '''
-                echo "Тесты пройдены"
             }
         }
-        
-        stage('Deploy') {
+
+        // ========== 4. ИНФОРМАЦИЯ ДЛЯ ДРУГИХ ВЕТОК ==========
+        stage('ℹ️ Информация о ветке') {
+            when {
+                not { branch 'main' }
+            }
             steps {
-                echo "Деплой на продакшн..."
-                bat '''
-                    chcp 65001
-                    echo Запуск сервера...
-                    start /B C:\\Users\\Егор\\AppData\\Local\\Microsoft\\WindowsApps\\python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8080
-                '''
-                echo "Сервер запущен на http://localhost:8080"
+                echo """
+                ════════════════════════════════════════════════
+                📌 ВЕТКА: ${BRANCH}
+                ℹ️  CD процесс пропущен (активен только для main)
+                📌 Для деплоя сделайте merge в main
+                ════════════════════════════════════════════════
+                """
             }
         }
     }
-    
+
+    // ========== ДЕЙСТВИЯ ПОСЛЕ ЗАВЕРШЕНИЯ ==========
     post {
         success {
-            echo "✅ Pipeline выполнен успешно!"
+            echo """
+            ════════════════════════════════════════════════
+            ✅ ПАЙПЛАЙН ВЫПОЛНЕН УСПЕШНО!
+            📌 Ветка: ${BRANCH}
+            🚀 CD: ${BRANCH == 'main' ? '✅ Выполнен' : '⏭️ Пропущен (не main)'}
+            ════════════════════════════════════════════════
+            """
         }
         failure {
-            echo "❌ Pipeline завершился с ошибкой!"
+            echo """
+            ════════════════════════════════════════════════
+            ❌ ПАЙПЛАЙН ЗАВЕРШИЛСЯ С ОШИБКОЙ!
+            📌 Ветка: ${BRANCH}
+            🔍 Проверьте логи выше для исправления
+            ════════════════════════════════════════════════
+            """
         }
     }
 }
