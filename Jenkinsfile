@@ -1,11 +1,6 @@
 pipeline {
     agent any
     
-    environment {
-        // Ваш путь к Python
-        PYTHON_PATH = 'C:\\Users\\Егор\\AppData\\Local\\Microsoft\\WindowsApps\\python.exe'
-    }
-    
     stages {
         stage('Checkout') {
             steps {
@@ -18,16 +13,12 @@ pipeline {
             steps {
                 bat '''
                     chcp 65001
-                    echo Создание виртуального окружения...
-                    if not exist venv (
-                        python -m venv venv --copies
-                    )
                     echo Установка зависимостей...
-                    venv\\Scripts\\python.exe -m pip install --upgrade pip
-                    venv\\Scripts\\python.exe -m pip install -r requirements.txt
-                    venv\\Scripts\\python.exe -m pip install pytest uvicorn
+                    python -m pip install --upgrade pip
+                    python -m pip install -r requirements.txt
+                    python -m pip install pytest uvicorn
                 '''
-                echo "Окружение настроено"
+                echo "Зависимости установлены"
             }
         }
         
@@ -36,7 +27,7 @@ pipeline {
                 bat '''
                     chcp 65001
                     echo Запуск тестов...
-                    venv\\Scripts\\python.exe -m pytest tests/ -v
+                    python -m pytest tests/ -v
                 '''
                 echo "Тесты пройдены"
             }
@@ -48,7 +39,7 @@ pipeline {
                 bat '''
                     chcp 65001
                     echo Запуск сервера...
-                    start /B venv\\Scripts\\python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8080
+                    start /B python -m uvicorn app.main:app --host 0.0.0.0 --port 8080
                 '''
                 echo "Сервер запущен на http://localhost:8080"
             }
