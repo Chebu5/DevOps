@@ -11,7 +11,7 @@ pipeline {
 
         stage('Установка зависимостей') {
             when {
-                expression { env.GIT_BRANCH == 'main' }
+                expression { env.GIT_BRANCH?.endsWith('main') }
             }
             steps {
                 bat '''
@@ -26,10 +26,11 @@ pipeline {
 
         stage('Запуск тестов') {
             when {
-                expression { env.GIT_BRANCH == 'main' }
+                expression { env.GIT_BRANCH?.endsWith('main') }
             }
             steps {
                 bat '''
+                    echo "Запуск тестов..."
                     call venv\\Scripts\\activate.bat
                     python -m pytest tests/ -v
                 '''
@@ -38,21 +39,21 @@ pipeline {
         
         stage('Деплой') {
             when {
-                expression { env.GIT_BRANCH == 'main' }
+                expression { env.GIT_BRANCH?.endsWith('main') }
             }
             steps {
                 bat '''
                     echo "Запуск сервера..."
                     call venv\\Scripts\\activate.bat
                     start /B python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
-                    echo "Сервер запущен на http://localhost:8000"
+                    echo "Сервер запущен на http://127.0.0.1:8000"
                 '''
             }
         }
         
         stage('Инфо') {
             when {
-                not { branch 'main' }
+                expression { !env.GIT_BRANCH?.endsWith('main') }
             }
             steps {
                 echo "Деплой только для main. Текущая ветка: ${env.GIT_BRANCH}"
