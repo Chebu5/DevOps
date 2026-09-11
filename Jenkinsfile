@@ -1,6 +1,10 @@
 pipeline {
     agent any
     
+    environment {
+        PYTHON = 'C:\\Users\\Eger\\AppData\\Local\\Programs\\Python\\Python310\\python.exe'
+    }
+    
     stages {
         stage('Получение кода') {
             steps {
@@ -10,13 +14,12 @@ pipeline {
         }
 
         stage('Установка зависимостей') {
-            when {
-                expression { env.GIT_BRANCH?.endsWith('main') }
-            }
+            when { expression { env.GIT_BRANCH?.endsWith('main') } }
             steps {
                 bat '''
-                    echo "Создание venv и установка зависимостей..."
-                    python -m venv venv
+                    echo "Создание venv в workspace Jenkins..."
+                    if exist venv rmdir /s /q venv
+                    "%PYTHON%" -m venv venv
                     call venv\\Scripts\\activate.bat
                     python -m pip install --upgrade pip
                     python -m pip install -r requirements.txt
@@ -25,9 +28,7 @@ pipeline {
         }
 
         stage('Запуск тестов') {
-            when {
-                expression { env.GIT_BRANCH?.endsWith('main') }
-            }
+            when { expression { env.GIT_BRANCH?.endsWith('main') } }
             steps {
                 bat '''
                     echo "Запуск тестов..."
@@ -38,23 +39,23 @@ pipeline {
         }
         
         stage('Деплой') {
-            when {
-                expression { env.GIT_BRANCH?.endsWith('main') }
-            }
+            when { expression { env.GIT_BRANCH?.endsWith('main') } }
             steps {
                 bat '''
+                    echo "Остановка старого сервера (если есть)..."
+                    taskkill /F /IM python.exe /FI "WINDOWTITLE eq FastAPI*" 2>nul || echo "Старый сервер не найден"
+
                     echo "Запуск сервера..."
                     call venv\\Scripts\\activate.bat
-                    start /B python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+                    start "FastAPI" cmd /c "python -m uvicorn app.main:app --host 127.0.0.1 --port 8000"
+                    timeout /t 3 >nul
                     echo "Сервер запущен на http://127.0.0.1:8000"
                 '''
             }
         }
         
         stage('Инфо') {
-            when {
-                expression { !env.GIT_BRANCH?.endsWith('main') }
-            }
+            when { expression { !env.GIT_BRANCH?.endsWith('main') } }
             steps {
                 echo "Деплой только для main. Текущая ветка: ${env.GIT_BRANCH}"
             }
@@ -62,11 +63,7 @@ pipeline {
     }
     
     post {
-        success {
-            echo "Готово! Ветка: ${env.GIT_BRANCH}"
-        }
-        failure {
-            echo "Ошибка! Ветка: ${env.GIT_BRANCH}"
-        }
+        success { echo "Готово! Ветка: ${env.GIT_BRANCH}" }
+        failure { echo "Ошибка! Ветка: ${env.GIT_BRANCH}" }
     }
 }
