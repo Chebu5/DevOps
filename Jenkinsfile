@@ -42,14 +42,10 @@ pipeline {
             when { expression { env.GIT_BRANCH?.endsWith('main') } }
             steps {
                 bat '''
-                    echo "Остановка старого сервера (если есть)..."
-                    taskkill /F /IM python.exe /FI "WINDOWTITLE eq FastAPI*" 2>nul || echo "Старый сервер не найден"
-
-                    echo "Запуск сервера..."
-                    call venv\\Scripts\\activate.bat
-                    start "FastAPI" cmd /c "python -m uvicorn app.main:app --host 127.0.0.1 --port 8000"
-                    timeout /t 3 >nul
-                    echo "Сервер запущен на http://127.0.0.1:8000"
+                echo "Запуск сервера..."
+                call venv\\Scripts\\activate.bat
+                start "" /B python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+                echo "Команда запуска отправлена"
                 '''
             }
         }
