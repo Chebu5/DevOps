@@ -8,6 +8,33 @@ pipeline {
                 echo "Код получен. Ветка: ${env.GIT_BRANCH}"
             }
         }
+
+        stage('Установка зависимостей') {
+            when {
+                expression { env.GIT_BRANCH == 'main' }
+            }
+            steps {
+                bat '''
+                    echo "Создание venv и установка зависимостей..."
+                    python -m venv venv
+                    call venv\\Scripts\\activate.bat
+                    python -m pip install --upgrade pip
+                    python -m pip install -r requirements.txt
+                '''
+            }
+        }
+
+        stage('Запуск тестов') {
+            when {
+                expression { env.GIT_BRANCH == 'main' }
+            }
+            steps {
+                bat '''
+                    call venv\\Scripts\\activate.bat
+                    python -m pytest tests/ -v
+                '''
+            }
+        }
         
         stage('Деплой') {
             when {
@@ -16,6 +43,7 @@ pipeline {
             steps {
                 bat '''
                     echo "Запуск сервера..."
+                    call venv\\Scripts\\activate.bat
                     start /B python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
                     echo "Сервер запущен на http://localhost:8000"
                 '''
