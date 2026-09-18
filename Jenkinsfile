@@ -42,10 +42,13 @@ pipeline {
             when { expression { env.GIT_BRANCH?.endsWith('main') } }
             steps {
                 bat '''
-                echo "Запуск сервера..."
-                call venv\\Scripts\\activate.bat
-                start "" /B python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
-                echo "Команда запуска отправлена"
+                    echo "Копирование файлов в C:\\apps\\hjfjksd..."
+                    robocopy . C:\\apps\\hjfjksd /E /XD .git venv __pycache__ .pytest_cache /NFL /NDL /NJH /NJS /NC /NS
+
+                    echo "Перезапуск службы FastAPI..."
+                    net stop FastAPI 2>nul || echo "Служба не была запущена"
+                    net start FastAPI
+                    echo "Сервер запущен на http://127.0.0.1:8000"
                 '''
             }
         }
