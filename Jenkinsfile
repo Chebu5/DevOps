@@ -2,6 +2,7 @@ pipeline {
     agent any
 
     environment {
+        DOCKER     = 'C:\\Users\\Eger\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe'
         IMAGE_NAME = 'my-fastapi-app'
         IMAGE_TAG  = "${env.BUILD_NUMBER}"
         IMAGE      = "${env.IMAGE_NAME}:${env.BUILD_NUMBER}"
@@ -17,29 +18,27 @@ pipeline {
     stages {
 
         stage('Checkout') {
-            steps {
-                checkout scm
-            }
+            steps { checkout scm }
         }
 
         stage('Docker info') {
             steps {
-                bat 'docker version'
-                bat 'docker info'
+                bat "\"${env.DOCKER}\" version"
+                bat "\"${env.DOCKER}\" info"
             }
         }
 
         stage('Build image') {
             steps {
-                bat "docker build -t ${env.IMAGE} -t ${env.IMAGE_NAME}:latest ."
+                bat "\"${env.DOCKER}\" build -t ${env.IMAGE} -t ${env.IMAGE_NAME}:latest ."
             }
         }
 
         stage('Run container') {
             steps {
                 bat """
-                    docker rm -f ${env.CONTAINER} 2>nul
-                    docker run -d --name ${env.CONTAINER} -p ${env.APP_PORT}:8000 -e PYTHONUNBUFFERED=1 ${env.IMAGE}
+                    "${env.DOCKER}" rm -f ${env.CONTAINER} 2>nul
+                    "${env.DOCKER}" run -d --name ${env.CONTAINER} -p ${env.APP_PORT}:8000 -e PYTHONUNBUFFERED=1 ${env.IMAGE}
                 """
             }
         }
@@ -61,7 +60,7 @@ pipeline {
                     :done
                     if "!OK!"=="0" (
                         echo App did not start
-                        docker logs ${env.CONTAINER}
+                        "${env.DOCKER}" logs ${env.CONTAINER}
                         exit /b 1
                     )
                 """
@@ -72,8 +71,8 @@ pipeline {
     post {
         failure {
             bat """
-                docker logs ${env.CONTAINER} 2>nul
-                docker rm -f ${env.CONTAINER} 2>nul
+                "${env.DOCKER}" logs ${env.CONTAINER} 2>nul
+                "${env.DOCKER}" rm -f ${env.CONTAINER} 2>nul
                 exit /b 0
             """
         }
