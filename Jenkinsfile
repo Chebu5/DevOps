@@ -2,17 +2,10 @@ pipeline {
     agent any
 
     environment {
-        DOCKER     = 'C:\\Users\\Eger\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe'
-        IMAGE_NAME = 'my-fastapi-app'
-        IMAGE_TAG  = "${env.BUILD_NUMBER}"
-        IMAGE      = "${env.IMAGE_NAME}:${env.BUILD_NUMBER}"
-        CONTAINER  = 'fastapi-app'
-        APP_PORT   = '8000'
-    }
-
-    options {
-        timestamps()
-        disableConcurrentBuilds()
+        DOCKER    = 'C:\\Users\\Eger\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe'
+        IMAGE     = "my-fastapi-app:${env.BUILD_NUMBER}"
+        CONTAINER = 'fastapi-app'
+        PORT      = '8000'
     }
 
     stages {
@@ -21,60 +14,22 @@ pipeline {
             steps { checkout scm }
         }
 
-        stage('Docker info') {
+        stage('Build') {
             steps {
-                bat "\"${env.DOCKER}\" version"
-                bat "\"${env.DOCKER}\" info"
+                bat "\"${env.DOCKER}\" build -t ${env.IMAGE} -t my-fastapi-app:latest ."
             }
         }
 
-        stage('Build image') {
-            steps {
-                bat "\"${env.DOCKER}\" build -t ${env.IMAGE} -t ${env.IMAGE_NAME}:latest ."
-            }
-        }
-
-        stage('Run container') {
+        stage('Run & Test') {
             steps {
                 bat """
                     "${env.DOCKER}" rm -f ${env.CONTAINER} 2>nul
-                    "${env.DOCKER}" run -d --name ${env.CONTAINER} -p ${env.APP_PORT}:8000 -e PYTHONUNBUFFERED=1 ${env.IMAGE}
+                    "${env.DOCKER}" run -d --name ${env.CONTAINER} -p ${env.PORT}:8000 ${env.IMAGE}
+                    powershell -Command "Start-Sleep -Seconds 5"
+                    "${env.DOCKER}" ps
+                    curl -f http://localhost:${env.PORT}/docs
                 """
             }
-        }
-
-        stage('Smoke test') {
-            steps {
-                bat """
-                    setlocal enabledelayedexpansion
-                    set OK=0
-                    for /L %%i in (1,1,10) do (
-                        curl -fsS http://localhost:${env.APP_PORT}/docs >nul 2>&1
-                        if !errorlevel! equ 0 (
-                            echo App is up
-                            set OK=1
-                            goto :done
-                        )
-                        timeout /t 3 /nobreak >nul
-                    )
-                    :done
-                    if "!OK!"=="0" (
-                        echo App did not start
-                        "${env.DOCKER}" logs ${env.CONTAINER}
-                        exit /b 1
-                    )
-                """
-            }
-        }
-    }
-
-    post {
-        failure {
-            bat """
-                "${env.DOCKER}" logs ${env.CONTAINER} 2>nul
-                "${env.DOCKER}" rm -f ${env.CONTAINER} 2>nul
-                exit /b 0
-            """
         }
     }
 }
