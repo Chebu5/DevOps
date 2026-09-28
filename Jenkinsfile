@@ -19,7 +19,7 @@ pipeline {
         NGINX_CONTAINER = 'fastapi-nginx'
 
         APP_PORT        = '8000'
-        NGINX_PORT      = '8080'
+        NGINX_PORT      = '8081'
     }
 
     stages {
