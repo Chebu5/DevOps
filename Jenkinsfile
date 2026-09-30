@@ -33,14 +33,13 @@ pipeline {
         stage('Prepare registry & network') {
             steps {
                 bat """
-                    "${env.DOCKER}" volume create registry-data >nul 2>nul
-
+                if not exist "C:\\Users\\Eger\\registry" mkdir "C:\\Users\\Eger\\registry"
                     "${env.DOCKER}" inspect registry >nul 2>nul
-                    if errorlevel 1 (
-                        "${env.DOCKER}" run -d -p 5000:5000 --name registry --restart unless-stopped -v registry-data:/var/lib/registry registry:2
-                    ) else (
-                        "${env.DOCKER}" start registry >nul 2>nul
-                    )
+                if errorlevel 1 (
+                    "${env.DOCKER}" run -d -p 5000:5000 --name registry --restart unless-stopped -v C:\\Users\\Eger\\registry:/var/lib/registry registry:2
+                ) else (
+                    "${env.DOCKER}" start registry >nul 2>nul
+                )
 
                     "${env.DOCKER}" network inspect ${env.NETWORK} >nul 2>nul
                     if errorlevel 1 "${env.DOCKER}" network create ${env.NETWORK}
