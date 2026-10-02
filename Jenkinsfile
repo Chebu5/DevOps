@@ -14,7 +14,6 @@ pipeline {
         NGINX_IMAGE     = "${REGISTRY}/${NGINX_NAME}:${env.BUILD_NUMBER}"
         NGINX_LATEST    = "${REGISTRY}/${NGINX_NAME}:latest"
 
-        NETWORK         = 'fastapi-net'
         APP_CONTAINER   = 'fastapi-app'
         NGINX_CONTAINER = 'fastapi-nginx'
 
@@ -29,8 +28,8 @@ pipeline {
                 checkout scm
             }
         }
-//if errorlevel 1 "${env.DOCKER}" network create ${env.NETWORK}
-        stage('Prepare registry & network') {
+
+        stage('Prepare registry') {
             steps {
                 bat """
                 if not exist "C:\\Users\\Eger\\registry" mkdir "C:\\Users\\Eger\\registry"
@@ -40,9 +39,6 @@ pipeline {
                 ) else (
                     "${env.DOCKER}" start registry >nul 2>nul
                 )
-
-                    "${env.DOCKER}" network inspect ${env.NETWORK} >nul 2>nul
-
                 """
             }
         }
@@ -68,9 +64,9 @@ pipeline {
                 bat """
                     "${env.DOCKER}" rm -f ${env.NGINX_CONTAINER} ${env.APP_CONTAINER} 2>nul
 
-                    "${env.DOCKER}" run -d --name ${env.APP_CONTAINER} --network ${env.NETWORK} -p ${env.APP_PORT}:8000 ${env.APP_IMAGE}
+                    "${env.DOCKER}" run -d --name ${env.APP_CONTAINER} -p ${env.APP_PORT}:8000 ${env.APP_IMAGE}
 
-                    "${env.DOCKER}" run -d --name ${env.NGINX_CONTAINER} --network ${env.NETWORK} -p ${env.NGINX_PORT}:80 ${env.NGINX_IMAGE}
+                    "${env.DOCKER}" run -d --name ${env.NGINX_CONTAINER} -p ${env.NGINX_PORT}:80 ${env.NGINX_IMAGE}
 
                     powershell -Command "Start-Sleep -Seconds 5"
 
