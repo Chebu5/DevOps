@@ -29,7 +29,7 @@ pipeline {
                 checkout scm
             }
         }
-
+//if errorlevel 1 "${env.DOCKER}" network create ${env.NETWORK}
         stage('Prepare registry & network') {
             steps {
                 bat """
@@ -42,7 +42,7 @@ pipeline {
                 )
 
                     "${env.DOCKER}" network inspect ${env.NETWORK} >nul 2>nul
-                    if errorlevel 1 "${env.DOCKER}" network create ${env.NETWORK}
+
                 """
             }
         }
