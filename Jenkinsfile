@@ -67,7 +67,19 @@ pipeline {
                 """
             }
         }
+        stage('Load images into K8s containerd') {
+            steps {
+                bat """
+                    "${env.DOCKER}" save ${env.APP_IMAGE} -o fastapi-app.tar
+                    "${env.DOCKER}" save ${env.NGINX_IMAGE} -o fastapi-nginx.tar
 
+                    "${env.DOCKER}" exec -i desktop-control-plane ctr -n k8s.io images import - < fastapi-app.tar
+                    "${env.DOCKER}" exec -i desktop-control-plane ctr -n k8s.io images import - < fastapi-nginx.tar
+
+                    del fastapi-app.tar fastapi-nginx.tar
+                """
+            }
+        }
         stage('Deploy to Kubernetes') {
             steps {
                 bat """
