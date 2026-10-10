@@ -109,18 +109,18 @@ pipeline {
                 """
             }
         }
+stage('Smoke test (K8s)') {
+    steps {
+        bat """
+            powershell -Command "Start-Process -FilePath '${env.KUBECTL}' -ArgumentList 'port-forward','svc/frontend-service','8082:80' -WindowStyle Hidden"
+            powershell -Command "Start-Sleep -Seconds 20"
 
-        stage('Smoke test (K8s)') {
-            steps {
-                bat """
-                    powershell -Command "Start-Process -FilePath '${env.KUBECTL}' -ArgumentList 'port-forward','svc/frontend-service','8082:80' -WindowStyle Hidden"
-                    powershell -Command "Start-Sleep -Seconds 5"
-                    curl.exe -f http://localhost:8082/api/health
+            curl.exe -f --retry 5 --retry-delay 3 --retry-connrefused http://localhost:8082/api/health
 
-                    powershell -Command "Get-Process kubectl -ErrorAction SilentlyContinue | Stop-Process -Force"
-                """
-            }
-        }
+            powershell -Command "Get-Process kubectl -ErrorAction SilentlyContinue | Stop-Process -Force"
+        """
+    }
+}
     }
 
     post {
