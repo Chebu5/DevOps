@@ -4,7 +4,7 @@ pipeline {
     environment {
         DOCKER  = 'C:\\Users\\Eger\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe'
         KUBECTL = 'C:\\Users\\Eger\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\kubectl.exe'
-
+        KUBECONFIG = 'C:\\Users\\Eger\\.kube\\config'
         APP_NAME   = 'my-fastapi-app'
         NGINX_NAME = 'my-fastapi-nginx'
 
