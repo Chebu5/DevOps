@@ -108,9 +108,9 @@ pipeline {
     post {
         always {
             bat """
-                "${env.DOCKER}" ps -a
-                kubectl get pods -o wide 2>nul
-                kubectl get events --sort-by=.lastTimestamp 2>nul
+                "${env.DOCKER}" ps -a || exit /b 0
+                kubectl get pods -o wide || exit /b 0
+                kubectl get events --sort-by=.lastTimestamp || exit /b 0
             """
         }
     }
