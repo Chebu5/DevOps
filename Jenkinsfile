@@ -97,6 +97,9 @@ pipeline {
         stage('Verify deployment') {
             steps {
                 bat """
+                    "${env.KUBECTL}" rollout restart deployment/backend-deployment
+                    "${env.KUBECTL}" rollout restart deployment/frontend-deployment
+
                     "${env.KUBECTL}" rollout status deployment/backend-deployment --timeout=120s
                     "${env.KUBECTL}" rollout status deployment/frontend-deployment --timeout=120s
 
