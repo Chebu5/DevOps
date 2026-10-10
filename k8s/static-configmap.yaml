@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: static-content
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html lang="ru">
+    <head>
+      <meta charset="UTF-8">
+      <title>DevOps Lab 3 — FastAPI + Kubernetes</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #326ce5; }
+        code { background: #f4f4f4; padding: 2px 6px; border-radius: 4px; }
+      </style>
+    </head>
+    <body>
+      <h1>FastAPI + Kubernetes</h1>
+      <p>Микросервисное приложение развёрнуто в кластере Kubernetes.</p>
+      <p>Проверьте API: <a href="/docs">/docs</a> (Swagger UI) или <a href="/api/health">/api/health</a></p>
+    </body>
+    </html>
