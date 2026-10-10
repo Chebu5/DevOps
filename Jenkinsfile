@@ -2,7 +2,8 @@ pipeline {
     agent any
 
     environment {
-        DOCKER = 'C:\\Users\\Eger\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe'
+        DOCKER  = 'C:\\Users\\Eger\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe'
+        KUBECTL = 'C:\\Users\\Eger\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\kubectl.exe'
 
         APP_NAME   = 'my-fastapi-app'
         NGINX_NAME = 'my-fastapi-nginx'
@@ -70,13 +71,13 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 bat """
-                    kubectl apply -f k8s/db-pvc.yaml
-                    kubectl apply -f k8s/nginx-configmap.yaml
-                    kubectl apply -f k8s/static-configmap.yaml
-                    kubectl apply -f k8s/backend-deployment.yaml
-                    kubectl apply -f k8s/backend-service.yaml
-                    kubectl apply -f k8s/frontend-deployment.yaml
-                    kubectl apply -f k8s/frontend-service.yaml
+                    "${env.KUBECTL}" apply -f k8s/db-pvc.yaml
+                    "${env.KUBECTL}" apply -f k8s/nginx-configmap.yaml
+                    "${env.KUBECTL}" apply -f k8s/static-configmap.yaml
+                    "${env.KUBECTL}" apply -f k8s/backend-deployment.yaml
+                    "${env.KUBECTL}" apply -f k8s/backend-service.yaml
+                    "${env.KUBECTL}" apply -f k8s/frontend-deployment.yaml
+                    "${env.KUBECTL}" apply -f k8s/frontend-service.yaml
                 """
             }
         }
@@ -84,12 +85,12 @@ pipeline {
         stage('Verify deployment') {
             steps {
                 bat """
-                    kubectl rollout status deployment/backend-deployment --timeout=120s
-                    kubectl rollout status deployment/frontend-deployment --timeout=120s
+                    "${env.KUBECTL}" rollout status deployment/backend-deployment --timeout=120s
+                    "${env.KUBECTL}" rollout status deployment/frontend-deployment --timeout=120s
 
-                    kubectl get pods
-                    kubectl get svc
-                    kubectl get pvc
+                    "${env.KUBECTL}" get pods
+                    "${env.KUBECTL}" get svc
+                    "${env.KUBECTL}" get pvc
                 """
             }
         }
@@ -97,9 +98,8 @@ pipeline {
         stage('Smoke test (K8s)') {
             steps {
                 bat """
-                    powershell -Command "Start-Sleep -Seconds 10"
-                    curl.exe -f http://localhost:30080/health
-                    curl.exe -f http://localhost:30080/docs
+                    powershell -Command "Start-Sleep -Seconds 15"
+                    curl.exe -f http://localhost:30080/api/health
                 """
             }
         }
@@ -109,8 +109,8 @@ pipeline {
         always {
             bat """
                 "${env.DOCKER}" ps -a || exit /b 0
-                kubectl get pods -o wide || exit /b 0
-                kubectl get events --sort-by=.lastTimestamp || exit /b 0
+                "${env.KUBECTL}" get pods -o wide || exit /b 0
+                "${env.KUBECTL}" get events --sort-by=.lastTimestamp || exit /b 0
             """
         }
     }
