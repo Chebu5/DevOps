@@ -22,6 +22,8 @@ pipeline {
         CATALOG_PORT = '8001'
         ORDER_PORT   = '8002'
         NGINX_PORT   = '8081'
+
+        DB_VOLUME = 'fastapi-db-data'
     }
 
     stages {
@@ -70,13 +72,17 @@ pipeline {
                 bat """
                     "${env.DOCKER}" rm -f ${env.NGINX_CONTAINER} ${env.CATALOG_CONTAINER} ${env.ORDER_CONTAINER} 2>nul
 
-                    "${env.DOCKER}" run -d --name ${env.CATALOG_CONTAINER} --network ${env.NETWORK} -p ${env.CATALOG_PORT}:8000 ${env.CATALOG_IMAGE}
-                    "${env.DOCKER}" run -d --name ${env.ORDER_CONTAINER}   --network ${env.NETWORK} -p ${env.ORDER_PORT}:8000 ${env.ORDER_IMAGE}
-                    "${env.DOCKER}" run -d --name ${env.NGINX_CONTAINER}   --network ${env.NETWORK} -p ${env.NGINX_PORT}:80 ${env.NGINX_IMAGE}
+                    "${env.DOCKER}" volume create ${env.DB_VOLUME} >nul
 
-                    powershell -Command "Start-Sleep -Seconds 5"
+                    "${env.DOCKER}" run -d --name ${env.CATALOG_CONTAINER} --network ${env.NETWORK} -p ${env.CATALOG_PORT}:8000 -v ${env.DB_VOLUME}:/data ${env.CATALOG_IMAGE}
+                    "${env.DOCKER}" run -d --name ${env.ORDER_CONTAINER}   --network ${env.NETWORK} -p ${env.ORDER_PORT}:8000   -v ${env.DB_VOLUME}:/data ${env.ORDER_IMAGE}
+                    "${env.DOCKER}" run -d --name ${env.NGINX_CONTAINER}   --network ${env.NETWORK} -p ${env.NGINX_PORT}:80     ${env.NGINX_IMAGE}
+
+                    powershell -Command "Start-Sleep -Seconds 8"
 
                     "${env.DOCKER}" ps
+                    "${env.DOCKER}" logs ${env.CATALOG_CONTAINER}
+                    "${env.DOCKER}" logs ${env.ORDER_CONTAINER}
                     curl.exe -f http://localhost:${env.CATALOG_PORT}/health
                     curl.exe -f http://localhost:${env.ORDER_PORT}/health
                 """
@@ -129,6 +135,8 @@ pipeline {
 
                     "${env.KUBECTL}" get pods
                     "${env.KUBECTL}" get svc
+                    "${env.KUBECTL}" get endpoints backend-catalog-service
+                    "${env.KUBECTL}" get endpoints backend-order-service
                 """
             }
         }
@@ -139,6 +147,8 @@ pipeline {
         always {
             bat """
                 "${env.DOCKER}" ps -a || exit /b 0
+                "${env.DOCKER}" logs ${env.CATALOG_CONTAINER} || exit /b 0
+                "${env.DOCKER}" logs ${env.ORDER_CONTAINER} || exit /b 0
                 "${env.KUBECTL}" get pods -o wide || exit /b 0
                 "${env.KUBECTL}" get events --sort-by=.lastTimestamp || exit /b 0
             """
