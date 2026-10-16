@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: backend-service
+  name: backend-catalog-service
 spec:
   selector:
-    app: backend
+    app: backend-catalog
   ports:
     - protocol: TCP
       port: 8000

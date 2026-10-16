@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-order-deployment
+  labels:
+    app: backend-order
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: backend-order
+  template:
+    metadata:
+      labels:
+        app: backend-order
+    spec:
+      containers:
+        - name: backend-order
+          image: my-fastapi-order:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DB_PATH
+              value: /data/test.db
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          volumeMounts:
+            - name: db-volume
+              mountPath: /data
+      volumes:
+        - name: db-volume
+          hostPath:
+            path: /tmp/fastapi-db
+            type: DirectoryOrCreate
